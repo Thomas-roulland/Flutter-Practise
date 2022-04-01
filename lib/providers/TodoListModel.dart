@@ -1,33 +1,30 @@
-import 'package:firstapp/models/Todo.dart';
+import 'package:firstapp/database/TodoElement.dart';
+import 'package:firstapp/database/TodoList.dart';
+import 'package:firstapp/main.dart';
 import 'package:flutter/widgets.dart';
+import 'package:hive/hive.dart';
 
 class TodoListModel extends ChangeNotifier {
-  Map<String, List<Todo>> myLists = {
-    'Mes courses': [
-      Todo(name: 'Pain burger'),
-      Todo(name: 'Steach Haché (10% matière grasse)'),
-      Todo(name: 'Tranche de Cheddar'),
-      Todo(name: 'Cornichons'),
-      Todo(name: 'Ketchup')
-    ]
-  };
-  List<Todo> _todos = List.empty(growable: true);
+  late String activeListName;
 
-  addItem(String item) {
-    _todos.add(Todo(name: item));
-    notifyListeners();
+  TodoListModel() {
+    Box box = Hive.box<TodoList>(MyApp.BOXNAME);
+    List<TodoList> list = box.values.toList().cast();
+    list.forEach((list) {
+      myLists[list.name] = list.elements.cast<TodoElement>();
+    });
   }
 
-  clear() {
-    _todos.clear();
-    notifyListeners();
+  late Map<String, List<TodoElement>> myLists = {};
+  List<TodoElement> _todos = List.empty(growable: true);
+
+  int? countElement(String name) {
+    return myLists[name]?.length;
   }
 
-  setActiveList(String name) {
-    if (myLists.containsKey(name)) {
-      _todos = myLists[name] as List<Todo>;
-      notifyListeners();
-    }
+  removeList(index) {
+    myLists.remove(index);
+    notifyListeners();
   }
 
   get listNames {
@@ -43,18 +40,51 @@ class TodoListModel extends ChangeNotifier {
     return false;
   }
 
-  get counList {
+  get countList {
     return myLists.length;
   }
 
-  int? countTodo(String name) {
-    return myLists[name]?.length;
+  setActiveList(String name) {
+    if (myLists.containsKey(name)) {
+      activeListName = name;
+      _todos = myLists[name] as List<TodoElement>;
+      notifyListeners();
+    }
   }
 
-  toggleChecked(int index) {
+  get todo {
+    return _todos;
+  }
+
+  addItem(String item) {
+    _todos.add(TodoElement(item));
+    notifyListeners();
+  }
+
+  TodoElement getItem(int index) {
+    if (index == -1) {
+      return TodoElement('');
+    }
+    return _todos.elementAt(index);
+  }
+
+  toggleCheck(int index) {
     if (index != -1) {
       _todos[index].checked = !_todos[index].checked;
       notifyListeners();
+    }
+  }
+
+  update(int index, String newValue) {
+    _todos[index].name = newValue;
+    notifyListeners();
+  }
+
+  insertOrUpdate(int index, String newValue) {
+    if (index == -1) {
+      addItem(newValue);
+    } else {
+      update(index, newValue);
     }
   }
 
@@ -63,27 +93,17 @@ class TodoListModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  InsetOrUpdate(int index, String newValue) {
-    if (index == -1) {
-      addItem(newValue);
-    } else {
-      update(index, newValue);
-    }
-  }
-
-  get todos {
-    return _todos;
-  }
-
-  Todo getItem(int index) {
-    if (index == -1) {
-      return Todo(name: '');
-    }
-    return _todos.elementAt(index);
-  }
-
-  update(int index, String newValue) {
-    _todos[index] = Todo(name: newValue);
+  clear() {
+    _todos.clear();
     notifyListeners();
+  }
+
+  save() async {
+    //Sauvegarder activeListName et ses items (myList)
+    Box box = await Hive.openBox<TodoList>(MyApp.BOXNAME);
+    TodoList list =
+        box.values.firstWhere((element) => element.name == activeListName)
+          ?..elements = _todos
+          ..save();
   }
 }

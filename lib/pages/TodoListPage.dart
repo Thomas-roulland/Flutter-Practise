@@ -1,4 +1,4 @@
-import 'package:firstapp/models/Todo.dart';
+import 'package:firstapp/database/TodoElement.dart';
 import 'package:firstapp/providers/TodoListModel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -19,66 +19,57 @@ class _TodoListPage extends State<TodoListPage> {
   Future<String?> addItemDialog([int index = -1]) {
     return showDialog<String>(
       context: context,
-      builder: (BuildContext context) =>
-          AlertDialog(
-            title: Text('Ajouter un champs'),
-            content: Consumer<TodoListModel>(
-                builder: (context, todoList, child) {
-                  return Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                    Checkbox(
-                        value: todoList
-                            .getItem(index)
-                            .checked,
-                        onChanged: (value) {
-                          todoList.toggleChecked(index);
-                        }),
-                    Flexible(
-                      child: TextFormField(
-                        autofocus: true,
-                        initialValue: (index == -1) ? '' : todoList
-                            .getItem(index)
-                            .name,
-                        onChanged: (value) {
-                          valueText = value;
-                        },
-                        decoration: InputDecoration(hintText: "titatu"),
-                      ),
-                    )
-                  ]);
+      builder: (BuildContext context) => AlertDialog(
+        title: Text('Ajouter un champs'),
+        content: Consumer<TodoListModel>(builder: (context, todoList, child) {
+          return Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
+            Checkbox(
+                value: todoList.getItem(index).checked,
+                onChanged: (value) {
+                  todoList.toggleCheck(index);
                 }),
-            actions: <Widget>[
-              FlatButton(
-                color: Colors.red,
-                textColor: Colors.white,
-                child: Text('CANCEL'),
-                onPressed: () {
-                  setState(() {
-                    Navigator.pop(context);
-                  });
+            Flexible(
+              child: TextFormField(
+                autofocus: true,
+                initialValue: (index == -1) ? '' : todoList.getItem(index).name,
+                onChanged: (value) {
+                  valueText = value;
                 },
+                decoration: InputDecoration(hintText: "titatu"),
               ),
-              Consumer<TodoListModel>(builder: (context, todolist, child) {
-                return FlatButton(
-                  color: Colors.green,
-                  textColor: Colors.white,
-                  child: Text('OK'),
-                  onPressed: () {
-                    todolist.InsetOrUpdate(index, valueText);
-                    Navigator.pop(context);
-                  },
-                );
-              }),
-            ],
+            )
+          ]);
+        }),
+        actions: <Widget>[
+          FlatButton(
+            color: Colors.red,
+            textColor: Colors.white,
+            child: Text('CANCEL'),
+            onPressed: () {
+              setState(() {
+                Navigator.pop(context);
+              });
+            },
           ),
+          Consumer<TodoListModel>(builder: (context, todolist, child) {
+            return FlatButton(
+              color: Colors.green,
+              textColor: Colors.white,
+              child: Text('OK'),
+              onPressed: () {
+                todolist.insertOrUpdate(index, valueText);
+                Navigator.pop(context);
+              },
+            );
+          }),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final listName = ModalRoute
-        .of(context)!
-        .settings
-        .arguments as String;
+    final listName = ModalRoute.of(context)!.settings.arguments as String;
     return Scaffold(
         appBar: AppBar(
           // Here we take the value from the MyHomePage object that was created by
@@ -87,9 +78,8 @@ class _TodoListPage extends State<TodoListPage> {
         ),
         body: Consumer<TodoListModel>(builder: (context, todolist, child) {
           todolist.setActiveList(listName);
-          List<Todo> todoItems = todolist.todos;
+          List<TodoElement> todoItems = todolist.todo;
           return ListView.builder(
-
               padding: const EdgeInsets.all(8),
               itemCount: todoItems.length,
               itemBuilder: (BuildContext context, int index) {
@@ -99,7 +89,7 @@ class _TodoListPage extends State<TodoListPage> {
                     Checkbox(
                         value: todoItems[index].checked,
                         onChanged: (value) {
-                          todolist.toggleChecked(index);
+                          todolist.toggleCheck(index);
                         }),
                   ]),
                   title: Text(todoItems[index].name),
@@ -139,7 +129,7 @@ class _TodoListPage extends State<TodoListPage> {
           Align(
               alignment: Alignment.bottomRight,
               child:
-              Consumer<TodoListModel>(builder: (context, todolist, child) {
+                  Consumer<TodoListModel>(builder: (context, todolist, child) {
                 return FloatingActionButton(
                     child: const Icon(Icons.clear),
                     onPressed: () {

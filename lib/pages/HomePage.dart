@@ -1,5 +1,3 @@
-import 'dart:js';
-
 import 'package:firstapp/providers/TodoListModel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -85,17 +83,17 @@ class _HomePage extends State<HomePage> {
               return ListView.builder(
                   shrinkWrap: true,
                   padding: const EdgeInsets.all(8),
-                  itemCount: todolist.counList,
+                  itemCount: todolist.countList,
                   itemBuilder: (BuildContext context, int index) {
                     return ListTile(
                       onTap: () {
-                        Navigator.pushNamed(context, '/todo',
+                        Navigator.pushNamed(context, '/todos',
                             arguments: myList[index]);
                       },
                       leading: Icon(Icons.lunch_dining),
                       title: Row(children: [
                         Text(myList[index]),
-                        Text(" [ ${todolist.countTodo(myList[index])} ]")
+                        Text(" [ ${todolist.countElement(myList[index])} ]")
                       ]),
                       dense: false,
                       trailing: Row(
